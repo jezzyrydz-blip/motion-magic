@@ -1,5 +1,5 @@
-import { CATEGORIES, getCategory } from "./plots.js?v=10";
-import { moderateText, SAFETY_BOT, safetySelfCheck } from "./safety.js?v=10";
+import { CATEGORIES, getCategory } from "./plots.js?v=11";
+import { moderateText, SAFETY_BOT, safetySelfCheck } from "./safety.js?v=11";
 import {
   makePlotCode,
   normalizeCode,
@@ -14,15 +14,15 @@ import {
   clearLinkParams,
   stashPending,
   takePending,
-} from "./phygital.js?v=10";
-import { allQuests, rewardFor, DEFAULT_REWARD, questWindowId, questWindowLeft, formatWindowLeft } from "./quests.js?v=10";
-import { SHOP_ITEMS, shopItem, shopHats, shopAuras, publicAuras } from "./shop.js?v=10";
-import { STARTER_HATS, normalizeHat, hatLabel, hatMarkup } from "./hats.js?v=10";
-import { GAMES, gameById, mountGame, stopActiveGame } from "./games.js?v=10";
+} from "./phygital.js?v=11";
+import { allQuests, rewardFor, DEFAULT_REWARD, questWindowId, questWindowLeft, formatWindowLeft } from "./quests.js?v=11";
+import { SHOP_ITEMS, shopItem, shopHats, shopAuras, publicAuras } from "./shop.js?v=11";
+import { STARTER_HATS, normalizeHat, hatLabel, hatMarkup } from "./hats.js?v=11";
+import { GAMES, gameById, mountGame, stopActiveGame } from "./games.js?v=11";
 
 const STORAGE_KEY = "motion-magic-v1";
 const LEGACY_KEYS = [];
-const TOWN_OWNER_NAME = "jezzyrydz";
+const TOWN_OWNER_NAME = "Jezzy";
 const SKINS = ["#ffd6a5", "#fdffb6", "#caffbf", "#9bf6ff", "#bdb2ff", "#ffc6ff", "#ffadad", "#f4a261"];
 const PLOT_EMOJIS = ["🌈", "🍕", "🎮", "📚", "🐱", "🌙", "🔥", "💜", "🍀", "🎵", "🚀", "🧸", "☕", "🌸", "⚡", "🧊", "🌊", "🎯", "🪄", "🧁"];
 const PLOT_THEMES = [
