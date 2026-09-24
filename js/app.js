@@ -1,5 +1,5 @@
-import { CATEGORIES, getCategory } from "./plots.js";
-import { moderateText, SAFETY_BOT, safetySelfCheck } from "./safety.js";
+import { CATEGORIES, getCategory } from "./plots.js?v=10";
+import { moderateText, SAFETY_BOT, safetySelfCheck } from "./safety.js?v=10";
 import {
   makePlotCode,
   normalizeCode,
@@ -14,11 +14,11 @@ import {
   clearLinkParams,
   stashPending,
   takePending,
-} from "./phygital.js";
-import { allQuests, rewardFor, DEFAULT_REWARD, questWindowId, questWindowLeft, formatWindowLeft } from "./quests.js";
-import { SHOP_ITEMS, shopItem, shopHats, shopAuras, publicAuras } from "./shop.js";
-import { STARTER_HATS, normalizeHat, hatLabel, hatMarkup } from "./hats.js";
-import { GAMES, gameById, mountGame, stopActiveGame } from "./games.js";
+} from "./phygital.js?v=10";
+import { allQuests, rewardFor, DEFAULT_REWARD, questWindowId, questWindowLeft, formatWindowLeft } from "./quests.js?v=10";
+import { SHOP_ITEMS, shopItem, shopHats, shopAuras, publicAuras } from "./shop.js?v=10";
+import { STARTER_HATS, normalizeHat, hatLabel, hatMarkup } from "./hats.js?v=10";
+import { GAMES, gameById, mountGame, stopActiveGame } from "./games.js?v=10";
 
 const STORAGE_KEY = "motion-magic-v1";
 const LEGACY_KEYS = [];
