@@ -579,7 +579,7 @@ function topbar() {
         <button class="btn ghost" data-go="quests">Quests</button>
         <button class="btn ghost" data-go="games">Games</button>
         <button class="btn berry" data-go="shop">Shop</button>
-        ${isSiteOwner() ? `<button class="btn ghost" id="pick-town-admins">Town admins</button>` : ""}
+        ${isSiteOwner() ? `<button class="btn berry" id="pick-town-admins">Make town admins</button>` : ""}
         <button class="btn ghost" id="reset-me">New avatar</button>
       </div>
     </header>
@@ -899,7 +899,7 @@ function isTownStaff(name = state.me?.name) {
 }
 
 function hasUnlimitedStars(name = state.me?.name) {
-  return isTownStaff(name);
+  return isSiteOwner(name) || isSiteAdmin(name);
 }
 
 function starsLabel() {
@@ -1365,8 +1365,8 @@ function townAdminsModal() {
   return `
     <div class="modal-back" id="modal-back">
       <div class="card modal">
-        <h2>Town admins</h2>
-        <p class="tag">People you pick can wear Angel and help run the app. Only you can add or remove them.</p>
+        <h2>Make town admins</h2>
+        <p class="tag">Only you can do this. People you pick get unlimited stars and can help run the app. Kids you do not pick stay regular kids.</p>
         <div class="picks admin-picks">
           ${names.length ? names.map((name) => `
             <button type="button" class="pick ${admins.includes(name) ? "active" : ""}" data-town-admin="${escapeHtml(name)}">${escapeHtml(name)}${admins.includes(name) ? " · App admin" : ""}</button>
