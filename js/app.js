@@ -1,5 +1,5 @@
-import { CATEGORIES, getCategory } from "./plots.js?v=12";
-import { moderateText, SAFETY_BOT, safetySelfCheck } from "./safety.js?v=12";
+import { CATEGORIES, getCategory } from "./plots.js?v=13";
+import { moderateText, SAFETY_BOT, safetySelfCheck } from "./safety.js?v=13";
 import {
   makePlotCode,
   normalizeCode,
@@ -14,11 +14,11 @@ import {
   clearLinkParams,
   stashPending,
   takePending,
-} from "./phygital.js?v=12";
-import { allQuests, rewardFor, DEFAULT_REWARD, questWindowId, questWindowLeft, formatWindowLeft } from "./quests.js?v=12";
-import { SHOP_ITEMS, shopItem, shopHats, shopAuras, publicAuras } from "./shop.js?v=12";
-import { STARTER_HATS, normalizeHat, hatLabel, hatMarkup } from "./hats.js?v=12";
-import { GAMES, gameById, mountGame, stopActiveGame } from "./games.js?v=12";
+} from "./phygital.js?v=13";
+import { allQuests, rewardFor, DEFAULT_REWARD, questWindowId, questWindowLeft, formatWindowLeft } from "./quests.js?v=13";
+import { SHOP_ITEMS, shopItem, shopHats, shopAuras, publicAuras } from "./shop.js?v=13";
+import { STARTER_HATS, normalizeHat, hatLabel, hatMarkup } from "./hats.js?v=13";
+import { GAMES, gameById, mountGame, stopActiveGame } from "./games.js?v=13";
 
 const STORAGE_KEY = "motion-magic-v1";
 const LEGACY_KEYS = [];
@@ -553,6 +553,7 @@ function render() {
     ${state.view === "quests" ? questsScreen() : ""}
     ${state.view === "shop" ? shopScreen() : ""}
     ${state.view === "games" ? gamesScreen() : ""}
+    ${state.view === "town-admins" ? townAdminsScreen() : ""}
     ${state.modal ? modalScreen() : ""}
     ${state.flash ? `<div class="flash" id="town-flash" role="status">${escapeHtml(state.flash)}</div>` : ""}
   `;
@@ -563,6 +564,7 @@ function render() {
   if (state.view === "quests") bindQuests();
   if (state.view === "shop") bindShop();
   if (state.view === "games") bindGames();
+  if (state.view === "town-admins") bindTownAdmins();
   if (state.modal) bindModal();
 }
 
@@ -583,7 +585,7 @@ function topbar() {
         <button class="btn ghost" data-go="quests">Quests</button>
         <button class="btn ghost" data-go="games">Games</button>
         <button class="btn berry" data-go="shop">Shop</button>
-        ${isSiteOwner() ? `<button type="button" class="btn berry" id="pick-town-admins">Make town admins</button>` : ""}
+        ${isSiteOwner() ? `<button type="button" class="btn berry" id="pick-town-admins" onclick="window.openTownAdmins&&window.openTownAdmins()">Make town admins</button>` : ""}
         <button class="btn ghost" id="reset-me">New avatar</button>
       </div>
     </header>
@@ -1364,33 +1366,49 @@ function townPeopleNames() {
   return [...names].filter(Boolean);
 }
 
-function townAdminsModal() {
-  if (!isSiteOwner()) return "";
+function townAdminsScreen() {
+  if (!isSiteOwner()) {
+    return `
+      <section class="card screen">
+        <h2>Town admins</h2>
+        <p class="tag">Only Jezzy can pick app admins.</p>
+        <button type="button" class="btn ghost" data-go="map">Back to plots</button>
+      </section>
+    `;
+  }
   const names = townPeopleNames();
   const admins = state.siteAdmins || [];
   return `
-    <div class="modal-back" id="modal-back">
-      <div class="card modal">
-        <h2>Make town admins</h2>
-        <p class="tag">Only you can do this. People you pick get unlimited stars and can help run the app. Kids you do not pick stay regular kids.</p>
-        <div class="picks admin-picks">
-          ${names.length ? names.map((name) => `
-            <button type="button" class="pick ${admins.includes(name) ? "active" : ""}" data-town-admin="${escapeHtml(name)}">${escapeHtml(name)}${admins.includes(name) ? " · App admin" : ""}</button>
-          `).join("") : `<p class="empty">Nobody else is in town yet. Type a name below, or wait for a visitor.</p>`}
+    <section class="screen">
+      <div class="toolbar">
+        <div>
+          <h2 style="margin:0">Make town admins</h2>
+          <p class="tag">Type a friend's avatar name. They get unlimited stars and Angel. Kids you do not pick stay regular kids.</p>
         </div>
-        <form class="form-grid" id="town-admin-form" action="#" method="get">
+        <button type="button" class="btn ghost" data-go="map">Back to plots</button>
+      </div>
+      <div class="card panel">
+        <form class="form-grid" id="town-admin-form">
           <label>Add by name
             <input name="name" maxlength="16" placeholder="A friend's avatar name" autocomplete="off" />
           </label>
           <div class="nav-actions">
-            <button class="btn berry" type="submit">Make admin</button>
-            <button class="btn ghost" type="button" id="close-modal">Done</button>
+            <button class="btn berry" type="submit" id="make-town-admin">Make admin</button>
           </div>
         </form>
-        <p class="tag">${admins.length ? `App admins: ${admins.map(escapeHtml).join(", ")}` : "No app admins yet."}</p>
+        <p class="tag">${admins.length ? `App admins: ${admins.map(escapeHtml).join(", ")}` : "No app admins yet. Type a name and tap Make admin."}</p>
+        <div class="picks admin-picks">
+          ${[...new Set([...admins, ...names])].map((name) => `
+            <button type="button" class="pick ${admins.some((admin) => sameName(admin, name)) ? "active" : ""}" data-town-admin="${escapeHtml(name)}">${escapeHtml(name)}${admins.some((admin) => sameName(admin, name)) ? " · tap to remove" : ""}</button>
+          `).join("")}
+        </div>
       </div>
-    </div>
+    </section>
   `;
+}
+
+function townAdminsModal() {
+  return townAdminsScreen();
 }
 
 function adminsModal() {
@@ -1692,14 +1710,7 @@ function bindChrome() {
   document.getElementById("pick-town-admins")?.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isSiteOwner()) {
-      showFlash("Only Jezzy can make town admins.");
-      render();
-      return;
-    }
-    leaveGames();
-    state.modal = "town-admins";
-    render();
+    openTownAdmins();
   });
   document.querySelectorAll("[data-admin-name]").forEach((btn) => {
     btn.addEventListener("click", () => toggleAdmin(state.plotId, btn.dataset.adminName));
@@ -1904,11 +1915,6 @@ function bindModal() {
     state.lastReward = null;
     render();
   });
-  document.getElementById("town-admin-form")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    addTownAdmin(new FormData(e.target).get("name")?.toString() || "");
-  });
   document.getElementById("reward-to-shop")?.addEventListener("click", () => {
     state.modal = null;
     state.lastReward = null;
@@ -2076,6 +2082,34 @@ function deletePlot(id) {
   render();
 }
 
+function openTownAdmins() {
+  if (!isSiteOwner()) {
+    showFlash("Only Jezzy can make town admins.");
+    render();
+    return;
+  }
+  leaveGames();
+  state.modal = null;
+  state.view = "town-admins";
+  render();
+}
+
+function bindTownAdmins() {
+  document.getElementById("town-admin-form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addTownAdmin(new FormData(e.target).get("name")?.toString() || "");
+  });
+  document.getElementById("make-town-admin")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    const form = document.getElementById("town-admin-form");
+    addTownAdmin(new FormData(form).get("name")?.toString() || "");
+  });
+  document.querySelectorAll("[data-town-admin]").forEach((btn) => {
+    btn.addEventListener("click", () => toggleTownAdmin(btn.dataset.townAdmin));
+  });
+}
+
 function toggleTownAdmin(name) {
   if (!isSiteOwner() || !name || isLockedOwnerName(name)) return;
   const clean = name.toString().trim().slice(0, 16);
@@ -2088,6 +2122,8 @@ function toggleTownAdmin(name) {
     state.siteAdmins.push(clean);
     showFlash(`${clean} is an app admin now`);
   }
+  state.view = "town-admins";
+  state.modal = null;
   save();
   render();
 }
@@ -2097,24 +2133,31 @@ function addTownAdmin(raw) {
   const name = raw.toString().trim().slice(0, 16);
   if (!name) {
     showFlash("Type a name first");
+    state.view = "town-admins";
     render();
     return;
   }
   if (sameName(name, state.me.name) || isLockedOwnerName(name)) {
     showFlash("You're already the town owner");
+    state.view = "town-admins";
     render();
     return;
   }
   const verdict = moderateText(name);
   if (verdict.action !== "ok") {
     showFlash("Please use kind words for admin names.");
+    state.view = "town-admins";
     render();
     return;
   }
   if (!(state.siteAdmins || []).some((admin) => sameName(admin, name))) {
     state.siteAdmins = [...(state.siteAdmins || []), name];
     showFlash(`${name} is an app admin now`);
+  } else {
+    showFlash(`${name} is already an app admin`);
   }
+  state.view = "town-admins";
+  state.modal = null;
   save();
   render();
 }
@@ -2634,5 +2677,6 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;");
 }
 
+window.openTownAdmins = openTownAdmins;
 render();
 consumePhygitalLink();
