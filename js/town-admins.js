@@ -1,1 +1,1 @@
-export const TOWN_ADMIN_NAMES = [];
+export const TOWN_ADMIN_NAMES = ["BrisketBiscuit"];

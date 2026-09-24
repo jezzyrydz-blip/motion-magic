@@ -1,6 +1,6 @@
-import { CATEGORIES, getCategory } from "./plots.js?v=14";
-import { moderateText, SAFETY_BOT, safetySelfCheck } from "./safety.js?v=14";
-import { TOWN_ADMIN_NAMES } from "./town-admins.js?v=14";
+import { CATEGORIES, getCategory } from "./plots.js?v=15";
+import { moderateText, SAFETY_BOT, safetySelfCheck } from "./safety.js?v=15";
+import { TOWN_ADMIN_NAMES } from "./town-admins.js?v=15";
 import {
   makePlotCode,
   normalizeCode,
@@ -15,11 +15,11 @@ import {
   clearLinkParams,
   stashPending,
   takePending,
-} from "./phygital.js?v=14";
-import { allQuests, rewardFor, DEFAULT_REWARD, questWindowId, questWindowLeft, formatWindowLeft } from "./quests.js?v=14";
-import { SHOP_ITEMS, shopItem, shopHats, shopAuras, publicAuras } from "./shop.js?v=14";
-import { STARTER_HATS, normalizeHat, hatLabel, hatMarkup } from "./hats.js?v=14";
-import { GAMES, gameById, mountGame, stopActiveGame } from "./games.js?v=14";
+} from "./phygital.js?v=15";
+import { allQuests, rewardFor, DEFAULT_REWARD, questWindowId, questWindowLeft, formatWindowLeft } from "./quests.js?v=15";
+import { SHOP_ITEMS, shopItem, shopHats, shopAuras, publicAuras } from "./shop.js?v=15";
+import { STARTER_HATS, normalizeHat, hatLabel, hatMarkup } from "./hats.js?v=15";
+import { GAMES, gameById, mountGame, stopActiveGame } from "./games.js?v=15";
 
 const STORAGE_KEY = "motion-magic-v1";
 const ADMINS_KEY = "motion-magic-town-admins";
