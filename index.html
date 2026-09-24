@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Motion Magic</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <base href="https://jezzyrydz-blip.github.io/motion-magic/" />
+    <script>
+      if (/\/motion-magic$/.test(location.pathname)) location.replace(location.pathname + "/" + location.search + location.hash);
+    </script>
     <link rel="icon" href="./favicon.ico" sizes="any" />
     <link rel="icon" type="image/svg+xml" href="./img/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="./img/favicon-32.png" />
@@ -14,11 +16,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css?v=11" />
+    <link rel="stylesheet" href="./styles.css?v=12" />
   </head>
   <body>
     <div class="app" id="app"></div>
     <div id="portal" class="portal" hidden aria-hidden="true"></div>
-    <script type="module" src="./js/app.js?v=11"></script>
+    <script type="module" src="./js/app.js?v=12"></script>
   </body>
 </html>

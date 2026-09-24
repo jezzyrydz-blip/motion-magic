@@ -1,5 +1,5 @@
-import { CATEGORIES, getCategory } from "./plots.js?v=11";
-import { moderateText, SAFETY_BOT, safetySelfCheck } from "./safety.js?v=11";
+import { CATEGORIES, getCategory } from "./plots.js?v=12";
+import { moderateText, SAFETY_BOT, safetySelfCheck } from "./safety.js?v=12";
 import {
   makePlotCode,
   normalizeCode,
@@ -14,11 +14,11 @@ import {
   clearLinkParams,
   stashPending,
   takePending,
-} from "./phygital.js?v=11";
-import { allQuests, rewardFor, DEFAULT_REWARD, questWindowId, questWindowLeft, formatWindowLeft } from "./quests.js?v=11";
-import { SHOP_ITEMS, shopItem, shopHats, shopAuras, publicAuras } from "./shop.js?v=11";
-import { STARTER_HATS, normalizeHat, hatLabel, hatMarkup } from "./hats.js?v=11";
-import { GAMES, gameById, mountGame, stopActiveGame } from "./games.js?v=11";
+} from "./phygital.js?v=12";
+import { allQuests, rewardFor, DEFAULT_REWARD, questWindowId, questWindowLeft, formatWindowLeft } from "./quests.js?v=12";
+import { SHOP_ITEMS, shopItem, shopHats, shopAuras, publicAuras } from "./shop.js?v=12";
+import { STARTER_HATS, normalizeHat, hatLabel, hatMarkup } from "./hats.js?v=12";
+import { GAMES, gameById, mountGame, stopActiveGame } from "./games.js?v=12";
 
 const STORAGE_KEY = "motion-magic-v1";
 const LEGACY_KEYS = [];
@@ -583,7 +583,7 @@ function topbar() {
         <button class="btn ghost" data-go="quests">Quests</button>
         <button class="btn ghost" data-go="games">Games</button>
         <button class="btn berry" data-go="shop">Shop</button>
-        ${isSiteOwner() ? `<button class="btn berry" id="pick-town-admins">Make town admins</button>` : ""}
+        ${isSiteOwner() ? `<button type="button" class="btn berry" id="pick-town-admins">Make town admins</button>` : ""}
         <button class="btn ghost" id="reset-me">New avatar</button>
       </div>
     </header>
@@ -1378,9 +1378,9 @@ function townAdminsModal() {
             <button type="button" class="pick ${admins.includes(name) ? "active" : ""}" data-town-admin="${escapeHtml(name)}">${escapeHtml(name)}${admins.includes(name) ? " · App admin" : ""}</button>
           `).join("") : `<p class="empty">Nobody else is in town yet. Type a name below, or wait for a visitor.</p>`}
         </div>
-        <form class="form-grid" id="town-admin-form">
+        <form class="form-grid" id="town-admin-form" action="#" method="get">
           <label>Add by name
-            <input name="name" maxlength="16" placeholder="A friend's avatar name" />
+            <input name="name" maxlength="16" placeholder="A friend's avatar name" autocomplete="off" />
           </label>
           <div class="nav-actions">
             <button class="btn berry" type="submit">Make admin</button>
@@ -1689,8 +1689,15 @@ function bindChrome() {
     state.modal = "admins";
     render();
   });
-  document.getElementById("pick-town-admins")?.addEventListener("click", () => {
-    if (!isSiteOwner()) return;
+  document.getElementById("pick-town-admins")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isSiteOwner()) {
+      showFlash("Only Jezzy can make town admins.");
+      render();
+      return;
+    }
+    leaveGames();
     state.modal = "town-admins";
     render();
   });
@@ -1699,10 +1706,6 @@ function bindChrome() {
   });
   document.querySelectorAll("[data-town-admin]").forEach((btn) => {
     btn.addEventListener("click", () => toggleTownAdmin(btn.dataset.townAdmin));
-  });
-  document.getElementById("town-admin-form")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    addTownAdmin(new FormData(e.target).get("name")?.toString() || "");
   });
   document.getElementById("rename-plot")?.addEventListener("click", () => {
     if (!canRenamePlot(findPlot(state.plotId))) return;
@@ -1900,6 +1903,11 @@ function bindModal() {
     state.modal = null;
     state.lastReward = null;
     render();
+  });
+  document.getElementById("town-admin-form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addTownAdmin(new FormData(e.target).get("name")?.toString() || "");
   });
   document.getElementById("reward-to-shop")?.addEventListener("click", () => {
     state.modal = null;
