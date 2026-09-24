@@ -416,6 +416,10 @@ function isPlotOwner(plot) {
   return sameName(plot.owner, state.me.name);
 }
 
+function canRenamePlot(plot) {
+  return Boolean(plot && (isPlotOwner(plot) || isSiteOwner()));
+}
+
 function plotAdmins(plot) {
   if (!plot || !Array.isArray(plot.admins)) return [];
   return plot.admins.filter((name) => name && name !== plot.owner);
@@ -726,6 +730,7 @@ function plotScreen() {
         <div class="nav-actions">
           ${teacher && !teaching ? `<button class="btn berry go-live">Teach live</button>` : ""}
           <button class="btn ghost" id="open-phygital">Phygital</button>
+          ${canRenamePlot(plot) ? `<button class="btn ghost" id="rename-plot">Rename</button>` : ""}
           ${owner ? `<button class="btn ghost" id="pick-admins">Pick admins</button>` : ""}
           <button class="btn berry" id="open-group">Make a group here</button>
           ${owner ? `<button class="btn danger" id="delete-plot">Delete plot</button>` : ""}
@@ -1198,6 +1203,7 @@ function joinButton(group) {
 
 function modalScreen() {
   if (state.modal === "plot") return plotModal();
+  if (state.modal === "rename") return renamePlotModal();
   if (state.modal === "delete") return deleteModal();
   if (state.modal === "live") return liveModal();
   if (state.modal === "admins") return adminsModal();
@@ -1490,6 +1496,28 @@ function groupModal() {
   `;
 }
 
+function renamePlotModal() {
+  const plot = findPlot(state.plotId);
+  if (!plot || !canRenamePlot(plot)) return "";
+  return `
+    <div class="modal-back" id="modal-back">
+      <form class="card modal" id="rename-plot-form">
+        <h2>Rename this plot</h2>
+        <p class="tag">Give ${plot.emoji} a new name. Groups and the map will use it right away.</p>
+        <div class="form-grid">
+          <label>New plot name
+            <input name="name" required maxlength="24" value="${escapeHtml(plot.name)}" />
+          </label>
+          <div class="nav-actions">
+            <button class="btn berry" type="submit">Save name</button>
+            <button class="btn ghost" type="button" id="close-modal">Keep it</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
 function plotModal() {
   const theme = PLOT_THEMES[0];
   return `
@@ -1675,6 +1703,11 @@ function bindChrome() {
   document.getElementById("town-admin-form")?.addEventListener("submit", (e) => {
     e.preventDefault();
     addTownAdmin(new FormData(e.target).get("name")?.toString() || "");
+  });
+  document.getElementById("rename-plot")?.addEventListener("click", () => {
+    if (!canRenamePlot(findPlot(state.plotId))) return;
+    state.modal = "rename";
+    render();
   });
   document.getElementById("delete-plot")?.addEventListener("click", () => {
     if (!isPlotOwner(findPlot(state.plotId))) return;
@@ -1932,6 +1965,10 @@ function bindModal() {
     e.preventDefault();
     addCustomQuest(new FormData(e.target));
   });
+  document.getElementById("rename-plot-form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    renamePlot(state.plotId, new FormData(e.target).get("name")?.toString() || "");
+  });
   document.getElementById("plot-form")?.addEventListener("submit", (e) => {
     e.preventDefault();
     if (!canCreatePlot()) {
@@ -1978,6 +2015,40 @@ function bindModal() {
     enterPlot(plot.id);
     if (state.view !== "plot" && !state.portaling) render();
   });
+}
+
+function renamePlot(id, raw) {
+  const plot = findPlot(id);
+  if (!canRenamePlot(plot)) return;
+  const name = raw.toString().trim().slice(0, 24);
+  if (!name) {
+    showFlash("Type a new plot name first");
+    render();
+    return;
+  }
+  if (name === plot.name) {
+    state.modal = null;
+    showFlash("That is already the plot name");
+    render();
+    return;
+  }
+  const naming = moderateText(name);
+  if (naming.action === "block") {
+    showFlash("Please pick a kind plot name. Swears aren't allowed.");
+    render();
+    return;
+  }
+  if (naming.action !== "ok") {
+    applyModeration(name, plot.id);
+    state.modal = naming.action === "ban" ? null : state.modal;
+    render();
+    return;
+  }
+  plot.name = name;
+  state.modal = null;
+  save();
+  showFlash(`${plot.emoji} is now ${name}`);
+  render();
 }
 
 function deletePlot(id) {
