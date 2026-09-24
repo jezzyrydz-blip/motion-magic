@@ -1,5 +1,6 @@
-import { CATEGORIES, getCategory } from "./plots.js?v=13";
-import { moderateText, SAFETY_BOT, safetySelfCheck } from "./safety.js?v=13";
+import { CATEGORIES, getCategory } from "./plots.js?v=14";
+import { moderateText, SAFETY_BOT, safetySelfCheck } from "./safety.js?v=14";
+import { TOWN_ADMIN_NAMES } from "./town-admins.js?v=14";
 import {
   makePlotCode,
   normalizeCode,
@@ -14,13 +15,14 @@ import {
   clearLinkParams,
   stashPending,
   takePending,
-} from "./phygital.js?v=13";
-import { allQuests, rewardFor, DEFAULT_REWARD, questWindowId, questWindowLeft, formatWindowLeft } from "./quests.js?v=13";
-import { SHOP_ITEMS, shopItem, shopHats, shopAuras, publicAuras } from "./shop.js?v=13";
-import { STARTER_HATS, normalizeHat, hatLabel, hatMarkup } from "./hats.js?v=13";
-import { GAMES, gameById, mountGame, stopActiveGame } from "./games.js?v=13";
+} from "./phygital.js?v=14";
+import { allQuests, rewardFor, DEFAULT_REWARD, questWindowId, questWindowLeft, formatWindowLeft } from "./quests.js?v=14";
+import { SHOP_ITEMS, shopItem, shopHats, shopAuras, publicAuras } from "./shop.js?v=14";
+import { STARTER_HATS, normalizeHat, hatLabel, hatMarkup } from "./hats.js?v=14";
+import { GAMES, gameById, mountGame, stopActiveGame } from "./games.js?v=14";
 
 const STORAGE_KEY = "motion-magic-v1";
+const ADMINS_KEY = "motion-magic-town-admins";
 const LEGACY_KEYS = [];
 const TOWN_OWNER_NAME = "Jezzy";
 const SKINS = ["#ffd6a5", "#fdffb6", "#caffbf", "#9bf6ff", "#bdb2ff", "#ffc6ff", "#ffadad", "#f4a261"];
@@ -241,10 +243,33 @@ function giveAngel(data) {
   if (data.me) data.me.aura = "angel";
 }
 
-function takeOwnerPerks(data) {
+function readStoredAdmins() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(ADMINS_KEY) || "[]");
+    return Array.isArray(saved) ? saved.filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeStoredAdmins(names) {
+  const clean = [...new Set((names || []).filter(Boolean).filter((name) => !isLockedOwnerName(name)))];
+  localStorage.setItem(ADMINS_KEY, JSON.stringify(clean));
+  return clean;
+}
+
+function allTownAdminNames(data = state) {
+  return [...new Set([
+    ...TOWN_ADMIN_NAMES,
+    ...(Array.isArray(data.siteAdmins) ? data.siteAdmins : []),
+    ...readStoredAdmins(),
+  ].filter(Boolean).filter((name) => !isLockedOwnerName(name)))];
+}
+
+function applyTownStaffPerks(data = state) {
   if (!data.me) return;
-  const appointed = (data.siteAdmins || []).some((admin) => sameName(admin, data.me.name));
-  if (appointed) {
+  data.siteAdmins = allTownAdminNames(data);
+  if (isLockedOwnerName(data.me.name) || data.siteAdmins.some((admin) => sameName(admin, data.me.name))) {
     giveAngel(data);
     return;
   }
@@ -254,15 +279,8 @@ function takeOwnerPerks(data) {
 
 function syncTownRoles(data) {
   data.siteOwner = TOWN_OWNER_NAME;
-  data.siteAdmins = [...new Set((Array.isArray(data.siteAdmins) ? data.siteAdmins : []).filter(Boolean))]
-    .filter((name) => !isLockedOwnerName(name));
-
-  if (isLockedOwnerName(data.me?.name)) {
-    giveAngel(data);
-    return;
-  }
-
-  takeOwnerPerks(data);
+  data.siteAdmins = writeStoredAdmins(allTownAdminNames(data));
+  applyTownStaffPerks(data);
 }
 
 function isSiteOwner(name = state.me?.name) {
@@ -270,10 +288,11 @@ function isSiteOwner(name = state.me?.name) {
 }
 
 function isSiteAdmin(name = state.me?.name) {
-  return Boolean(name && (state.siteAdmins || []).some((admin) => sameName(admin, name)));
+  return Boolean(name && allTownAdminNames().some((admin) => sameName(admin, name)));
 }
 
 function persist(data) {
+  data.siteAdmins = writeStoredAdmins(allTownAdminNames(data));
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     me: data.me,
     groups: data.groups,
@@ -543,6 +562,7 @@ function render() {
     bindWelcome();
     return;
   }
+  applyTownStaffPerks(state);
   const worn = shopAuras().find((item) => item.adminOnly && item.aura === state.me.aura);
   if (worn && !isTownStaff()) state.me.aura = "none";
   app.innerHTML = `
@@ -1383,7 +1403,7 @@ function townAdminsScreen() {
       <div class="toolbar">
         <div>
           <h2 style="margin:0">Make town admins</h2>
-          <p class="tag">Type a friend's avatar name. They get unlimited stars and Angel. Kids you do not pick stay regular kids.</p>
+          <p class="tag">Type a friend's avatar name. They get unlimited stars and the Angel aura. Kids you do not pick stay regular kids.</p>
         </div>
         <button type="button" class="btn ghost" data-go="map">Back to plots</button>
       </div>
