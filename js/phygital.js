@@ -1,5 +1,6 @@
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const PENDING_KEY = "motion-magic-join";
+const LIVE_APP_URL = "https://jezzyrydz-blip.github.io/motion-magic/";
 
 export function makePlotCode(existing = []) {
   const taken = new Set(existing.map((code) => normalizeCode(code)));
@@ -78,9 +79,7 @@ export function unpackPlot(pack) {
 }
 
 export function shareUrl(plot) {
-  const url = new URL(location.href);
-  url.hash = "";
-  url.search = "";
+  const url = new URL(LIVE_APP_URL);
   url.searchParams.set("join", plot.code);
   url.searchParams.set("pack", packPlot(plot));
   return url.toString();
