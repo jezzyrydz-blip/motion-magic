@@ -22,6 +22,8 @@ import { GAMES, gameById, mountGame, stopActiveGame } from "./games.js";
 
 const STORAGE_KEY = "motion-magic-v1";
 const LEGACY_KEYS = [];
+const TOWN_OWNER_NAMES = ["jezzyrydz", "jezzy"];
+const TOWN_OWNER_LABEL = "jezzyrydz";
 const SKINS = ["#ffd6a5", "#fdffb6", "#caffbf", "#9bf6ff", "#bdb2ff", "#ffc6ff", "#ffadad", "#f4a261"];
 const PLOT_EMOJIS = ["🌈", "🍕", "🎮", "📚", "🐱", "🌙", "🔥", "💜", "🍀", "🎵", "🚀", "🧸", "☕", "🌸", "⚡", "🧊", "🌊", "🎯", "🪄", "🧁"];
 const PLOT_THEMES = [
@@ -146,9 +148,9 @@ function loadState() {
       const customPlots = (Array.isArray(saved.customPlots) ? saved.customPlots : []).map((plot, _, list) => {
         const next = {
           ...plot,
-          owner: plot.owner || saved.me?.name || "",
+          owner: plot.owner || "",
           admins: Array.isArray(plot.admins)
-            ? plot.admins.filter((name) => name && name !== (plot.owner || saved.me?.name))
+            ? plot.admins.filter((name) => name && name !== plot.owner)
             : [],
           irl: plotIrl(plot),
         };
@@ -190,7 +192,7 @@ function loadState() {
         gameResult: null,
       };
       backfillQuestRewards(next);
-      grantSiteOwner(next);
+      syncTownRoles(next);
       try { persist(next); } catch { /* keep going even if storage is full */ }
       return next;
     }
@@ -226,26 +228,53 @@ function backfillQuestRewards(data) {
   data.stars = stars;
 }
 
-function grantSiteOwner(data) {
-  if (!data.me?.name) {
-    data.siteOwner = String(data.siteOwner || "");
-    data.siteAdmins = Array.isArray(data.siteAdmins) ? data.siteAdmins.filter(Boolean) : [];
-    return;
-  }
-  data.siteOwner = data.me.name;
+function sameName(a, b) {
+  return Boolean(a && b && String(a).trim().toLowerCase() === String(b).trim().toLowerCase());
+}
+
+function isLockedOwnerName(name) {
+  const needle = String(name || "").trim().toLowerCase();
+  return Boolean(needle && TOWN_OWNER_NAMES.some((owner) => owner.toLowerCase() === needle));
+}
+
+function giveAngel(data) {
   data.owned = Array.isArray(data.owned) ? data.owned : [];
   if (!data.owned.includes("aura-angel")) data.owned.push("aura-angel");
-  data.me.aura = "angel";
-  data.siteAdmins = (Array.isArray(data.siteAdmins) ? data.siteAdmins : [])
-    .filter((name) => name && name !== data.me.name);
+  if (data.me) data.me.aura = "angel";
+}
+
+function takeOwnerPerks(data) {
+  if (!data.me) return;
+  const appointed = (data.siteAdmins || []).some((admin) => sameName(admin, data.me.name));
+  if (appointed) {
+    giveAngel(data);
+    return;
+  }
+  if (data.me.aura === "angel") data.me.aura = "none";
+  data.owned = (Array.isArray(data.owned) ? data.owned : []).filter((id) => id !== "aura-angel");
+}
+
+function syncTownRoles(data) {
+  const me = String(data.me?.name || "").trim();
+  data.siteAdmins = [...new Set((Array.isArray(data.siteAdmins) ? data.siteAdmins : []).filter(Boolean))]
+    .filter((name) => !isLockedOwnerName(name));
+
+  if (isLockedOwnerName(me)) {
+    data.siteOwner = me;
+    giveAngel(data);
+    return;
+  }
+
+  data.siteOwner = isLockedOwnerName(data.siteOwner) ? String(data.siteOwner).trim() : TOWN_OWNER_LABEL;
+  takeOwnerPerks(data);
 }
 
 function isSiteOwner(name = state.me?.name) {
-  return Boolean(name && state.siteOwner && name === state.siteOwner);
+  return isLockedOwnerName(name);
 }
 
 function isSiteAdmin(name = state.me?.name) {
-  return Boolean(name && (state.siteAdmins || []).includes(name));
+  return Boolean(name && (state.siteAdmins || []).some((admin) => sameName(admin, name)));
 }
 
 function persist(data) {
@@ -387,9 +416,8 @@ function isPlotLive(plotId) {
 }
 
 function isPlotOwner(plot) {
-  if (!plot || !state.me) return false;
-  if (plot.owner) return plot.owner === state.me.name;
-  return true;
+  if (!plot || !state.me || !plot.owner) return false;
+  return sameName(plot.owner, state.me.name);
 }
 
 function plotAdmins(plot) {
@@ -398,7 +426,7 @@ function plotAdmins(plot) {
 }
 
 function isPlotAdmin(plot, name = state.me?.name) {
-  if (!plot || !name || name === plot.owner) return false;
+  if (!plot || !name || sameName(name, plot.owner)) return false;
   return plotAdmins(plot).includes(name);
 }
 
@@ -728,7 +756,7 @@ function plotScreen() {
                   <div>
                     <div class="who-name">
                       <strong>${escapeHtml(person.name)}</strong>
-                      ${isSiteOwner(person.name) ? `<span class="role-pill owner">Town owner</span>` : isSiteAdmin(person.name) ? `<span class="role-pill admin">App admin</span>` : person.name === plot.owner ? `<span class="role-pill owner">Owner</span>` : isPlotAdmin(plot, person.name) ? `<span class="role-pill admin">Admin</span>` : ""}
+                      ${isSiteOwner(person.name) ? `<span class="role-pill owner">Town owner</span>` : isSiteAdmin(person.name) ? `<span class="role-pill admin">App admin</span>` : sameName(person.name, plot.owner) ? `<span class="role-pill owner">Owner</span>` : isPlotAdmin(plot, person.name) ? `<span class="role-pill admin">Admin</span>` : ""}
                       ${isCheckedIn(plot.id, person.name) ? `<span class="role-pill irl">Here IRL</span>` : ""}
                     </div>
                     <div class="tag">${person.id === "me" ? "That's you" : teaching && person.name === live.teacher ? "Teaching live" : isCheckedIn(plot.id, person.name) ? "Checked in nearby" : "Visiting this plot"}</div>
@@ -1586,7 +1614,7 @@ function bindWelcome() {
       x: 48,
       y: 64,
     };
-    grantSiteOwner(state);
+    syncTownRoles(state);
     state.view = "map";
     save();
     consumePhygitalLink();
@@ -1974,12 +2002,12 @@ function deletePlot(id) {
 }
 
 function toggleTownAdmin(name) {
-  if (!isSiteOwner() || !name || name === state.siteOwner) return;
+  if (!isSiteOwner() || !name || isLockedOwnerName(name)) return;
   const clean = name.toString().trim().slice(0, 16);
   if (!clean) return;
   if (!state.siteAdmins) state.siteAdmins = [];
-  if (state.siteAdmins.includes(clean)) {
-    state.siteAdmins = state.siteAdmins.filter((admin) => admin !== clean);
+  if (state.siteAdmins.some((admin) => sameName(admin, clean))) {
+    state.siteAdmins = state.siteAdmins.filter((admin) => !sameName(admin, clean));
     showFlash(`${clean} is not an app admin anymore`);
   } else {
     state.siteAdmins.push(clean);
@@ -1997,7 +2025,7 @@ function addTownAdmin(raw) {
     render();
     return;
   }
-  if (name === state.me.name || name === state.siteOwner) {
+  if (sameName(name, state.me.name) || isLockedOwnerName(name)) {
     showFlash("You're already the town owner");
     render();
     return;
@@ -2008,7 +2036,7 @@ function addTownAdmin(raw) {
     render();
     return;
   }
-  if (!(state.siteAdmins || []).includes(name)) {
+  if (!(state.siteAdmins || []).some((admin) => sameName(admin, name))) {
     state.siteAdmins = [...(state.siteAdmins || []), name];
     showFlash(`${name} is an app admin now`);
   }
@@ -2018,7 +2046,7 @@ function addTownAdmin(raw) {
 
 function toggleAdmin(plotId, name) {
   const plot = findPlot(plotId);
-  if (!isPlotOwner(plot) || !name || name === plot.owner) return;
+  if (!isPlotOwner(plot) || !name || sameName(name, plot.owner)) return;
   if (!Array.isArray(plot.admins)) plot.admins = [];
   if (plot.admins.includes(name)) {
     plot.admins = plot.admins.filter((admin) => admin !== name);
