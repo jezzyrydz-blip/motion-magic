@@ -24,6 +24,6 @@ Open `index.html` in a browser, or visit `http://localhost:5173` if a local serv
 
 ## Website
 
-This is the **Motion Magic** copy of the town. Little Meetup stays on its own repo and site.
+The live app is **https://jezzyrydz-blip.github.io/motion-magic/**
 
-Host this folder on Vercel or Netlify as a static site (no build command).
+This is the **Motion Magic** copy of the town. Little Meetup stays on its own repo and site.
