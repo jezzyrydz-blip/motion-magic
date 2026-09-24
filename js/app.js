@@ -22,8 +22,7 @@ import { GAMES, gameById, mountGame, stopActiveGame } from "./games.js";
 
 const STORAGE_KEY = "motion-magic-v1";
 const LEGACY_KEYS = [];
-const TOWN_OWNER_NAMES = ["jezzyrydz", "jezzy"];
-const TOWN_OWNER_LABEL = "jezzyrydz";
+const TOWN_OWNER_NAME = "jezzyrydz";
 const SKINS = ["#ffd6a5", "#fdffb6", "#caffbf", "#9bf6ff", "#bdb2ff", "#ffc6ff", "#ffadad", "#f4a261"];
 const PLOT_EMOJIS = ["🌈", "🍕", "🎮", "📚", "🐱", "🌙", "🔥", "💜", "🍀", "🎵", "🚀", "🧸", "☕", "🌸", "⚡", "🧊", "🌊", "🎯", "🪄", "🧁"];
 const PLOT_THEMES = [
@@ -233,8 +232,7 @@ function sameName(a, b) {
 }
 
 function isLockedOwnerName(name) {
-  const needle = String(name || "").trim().toLowerCase();
-  return Boolean(needle && TOWN_OWNER_NAMES.some((owner) => owner.toLowerCase() === needle));
+  return sameName(name, TOWN_OWNER_NAME);
 }
 
 function giveAngel(data) {
@@ -255,17 +253,15 @@ function takeOwnerPerks(data) {
 }
 
 function syncTownRoles(data) {
-  const me = String(data.me?.name || "").trim();
+  data.siteOwner = TOWN_OWNER_NAME;
   data.siteAdmins = [...new Set((Array.isArray(data.siteAdmins) ? data.siteAdmins : []).filter(Boolean))]
     .filter((name) => !isLockedOwnerName(name));
 
-  if (isLockedOwnerName(me)) {
-    data.siteOwner = me;
+  if (isLockedOwnerName(data.me?.name)) {
     giveAngel(data);
     return;
   }
 
-  data.siteOwner = isLockedOwnerName(data.siteOwner) ? String(data.siteOwner).trim() : TOWN_OWNER_LABEL;
   takeOwnerPerks(data);
 }
 
